@@ -49,7 +49,7 @@ const UserMenuExpand = () => {
       {isMenuOpen && (
         <div className="z-20 p-4 bg-white/100 shadow-2xl absolute right-0 top-10 flex flex-col items-center justify-center gap-2 rounded-3xl">
           <a
-            href="https://liweiphys.github.io/layra/" // 配置页面的路由路径
+            href="https://mephisto1056.github.io/Lumbar/" // 配置页面的路由路径
             className="px-3 text-indigo-500 hover:text-indigo-700 flex items-center cursor-pointer"
             target="_blank" // 新窗口打开
             rel="noopener noreferrer"

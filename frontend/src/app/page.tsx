@@ -49,15 +49,12 @@ const Homepage = () => {
           <h2
             className={` font-light text-xl text-gray-900 mb-4  transform transition-transform duration-300  hover:scale-110`}
           >
-            Endlessly Customizable Agent Worklfow Engine - Code Without Limits,
-            Build Without Boundaries
+            A one-stop AI platform completely customized for GP business
           </h2>
           {/* "Agent Workflow Engine – Design, Automate, and Scale with AI-Driven Precision." */}
           <div className="w-full flex flex-col items-center justify-center gap-2 transform transition-transform duration-300  hover:scale-105">
             <h2 className={`text-gray-500`}>
-              With pure visual embeddings,{" "}
-              <span className="text-indigo-500">LAYRA</span> understands
-              documents like a human
+               Based on the excellent GP historical business accumulation, AI helps us to provide more accurate and excellent auxiliary work
             </h2>
             <h2 className={`text text-gray-700`}>
               — page by page, structure and all.
@@ -121,23 +118,6 @@ const Homepage = () => {
             className={`flex items-center justify-center text-sm font-sans text-gray-900 mb-4  transform transition-transform duration-300  hover:scale-105`}
           >
             Forget tokenization. Forget layout loss.
-          </h4>
-          <h4
-            className={`flex items-center justify-center text-xs font-sans text-gray-900 mb-3  transform transition-transform duration-300  hover:scale-105`}
-          >
-            Feel free to contact me:
-            <span className="text-indigo-700 ml-1 mr-1">
-              {" "}
-              liweixmu@foxmail.com{" "}
-            </span>
-            <span>|</span>
-            <a
-              href="https://github.com/liweiphys"
-              className="text-indigo-700 ml-1"
-            >
-              {" "}
-              GitHub{" "}
-            </a>
           </h4>
         </div>
       </div>

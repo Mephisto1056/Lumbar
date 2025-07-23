@@ -14,6 +14,7 @@ import {
   addModelConfig,
   deleteModelConfig,
   getAllModelConfig,
+  validateApiKey,
 } from "@/lib/api/configApi";
 import AddLLMEngine from "./AddLLMEngine";
 import { useClickAway } from "react-use";
@@ -40,6 +41,9 @@ const KnowledgeConfigModal: React.FC<ConfigModalProps> = ({
   const [showConfirmDeleteConfig, setShowConfirmDeleteConfig] = useState<{
     config: ModelConfig;
   } | null>(null);
+  const [apiKeyValid, setApiKeyValid] = useState<boolean | null>(null);
+  const [isValidatingApiKey, setIsValidatingApiKey] = useState(false);
+  const [apiKeyValidationMessage, setApiKeyValidationMessage] = useState("");
   const { user } = useAuthStore();
   // 在组件内
   const ref = useRef(null);
@@ -140,6 +144,11 @@ const KnowledgeConfigModal: React.FC<ConfigModalProps> = ({
   };
 
   const handleSubmit = () => {
+    if (apiKeyValid === false) {
+      alert("API Key验证失败，请检查并重新验证后再保存");
+      return;
+    }
+
     const selectedIds = knowledgeBases
       .filter((base) => base.selected)
       .map((base) => base.id);
@@ -245,6 +254,27 @@ const KnowledgeConfigModal: React.FC<ConfigModalProps> = ({
       }
     }
     //fetchKnowledgeBasesAndAllModelConfig();
+  };
+
+  const handleValidateApiKey = async () => {
+    if (!modelConfig.modelURL || !modelConfig.apiKey) {
+      setApiKeyValid(false);
+      setApiKeyValidationMessage("请填写LLM URL和API Key");
+      return;
+    }
+
+    setIsValidatingApiKey(true);
+    try {
+      const response = await validateApiKey(modelConfig.modelURL, modelConfig.apiKey);
+      const isValid = response.data.valid;
+      setApiKeyValid(isValid);
+      setApiKeyValidationMessage(response.data.message);
+    } catch (error) {
+      setApiKeyValid(false);
+      setApiKeyValidationMessage("验证失败，请检查网络连接");
+    } finally {
+      setIsValidatingApiKey(false);
+    }
   };
 
   if (!visible) return null;
@@ -491,18 +521,48 @@ const KnowledgeConfigModal: React.FC<ConfigModalProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium">API Key</label>
-                  <input
-                    type="password"
-                    value={modelConfig.apiKey}
-                    onChange={(e) =>
-                      setModelConfig((prev) => ({
-                        ...prev,
-                        apiKey: e.target.value,
-                      }))
-                    }
-                    className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-3xl focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-                    placeholder="sk-xxxxxxxx"
-                  />
+                  <div className="relative">
+                    <input
+                      type="password"
+                      value={modelConfig.apiKey}
+                      onChange={(e) => {
+                        setModelConfig((prev) => ({
+                          ...prev,
+                          apiKey: e.target.value,
+                        }));
+                        setApiKeyValid(null);
+                        setApiKeyValidationMessage("");
+                      }}
+                      className="mt-1 w-full px-3 py-2 pr-10 border border-gray-200 rounded-3xl focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                      placeholder="sk-xxxxxxxx"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleValidateApiKey}
+                      disabled={isValidatingApiKey || !modelConfig.modelURL || !modelConfig.apiKey}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 text-xs bg-indigo-500 text-white rounded-full hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isValidatingApiKey ? "验证中..." : "验证"}
+                    </button>
+                    {apiKeyValid !== null && (
+                      <div className="absolute right-16 top-1/2 transform -translate-y-1/2">
+                        {apiKeyValid ? (
+                          <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {apiKeyValidationMessage && (
+                    <p className={`mt-1 text-xs ${apiKeyValid ? 'text-green-600' : 'text-red-600'}`}>
+                      {apiKeyValidationMessage}
+                    </p>
+                  )}
                 </div>
               </div>
             </details>
@@ -919,7 +979,8 @@ const KnowledgeConfigModal: React.FC<ConfigModalProps> = ({
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 bg-indigo-500 text-white rounded-full hover:bg-indigo-700 cursor-pointer"
+            disabled={apiKeyValid === false}
+            className="px-4 py-2 bg-indigo-500 text-white rounded-full hover:bg-indigo-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Save
           </button>

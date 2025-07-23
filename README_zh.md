@@ -2,13 +2,13 @@
   <img src="./assets/logo.png" width="300" height="300" alt="LAYRA Logo" />
   <h1>🌌 LAYRA：视觉优先的下一代Agent工作流引擎：构建无限可能！</h1>
   <p>
-    <a href="https://github.com/liweiphys/layra/stargazers">
+    <a href="https://github.com/Mephisto1056/Lumbar/stargazers">
       <img src="https://img.shields.io/github/stars/liweiphys/layra?style=social" alt="GitHub Stars" />
     </a>
-    <a href="https://github.com/liweiphys/layra/blob/main/LICENSE">
+    <a href="https://github.com/Mephisto1056/Lumbar/blob/main/LICENSE">
       <img src="https://img.shields.io/github/license/liweiphys/layra" alt="License: Apache 2.0" />
     </a>
-    <a href="https://github.com/liweiphys/layra/issues">
+    <a href="https://github.com/Mephisto1056/Lumbar/issues">
       <img src="https://img.shields.io/github/issues-closed/liweiphys/layra" alt="Closed Issues" />
     </a>
     <a href="https://liweiphys.github.io/layra">
@@ -86,7 +86,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/liweiphys/layra.git
+git clone https://github.com/Mephisto1056/Lumbar.git
 cd layra
 
 # 编辑配置文件（按需修改服务器IP/参数）
@@ -319,7 +319,7 @@ PDF 解析为图像 →ColQwen2.5 视觉嵌入 → 元数据/文件存储：
 ##### 1. 配置环境变量
 
 ```bash
-git clone https://github.com/liweiphys/layra.git
+git clone https://github.com/Mephisto1056/Lumbar.git
 cd layra
 vim .env  # 修改SERVER_IP等参数
 ```
@@ -437,7 +437,7 @@ docker compose down -v && docker compose up --build  # ⚠️ 删除所有数据
 
 **liweiphys**  
 📧 liweixmu@foxmail.com  
-🐙 [github.com/liweiphys/layra](https://github.com/liweiphys/layra)  
+🐙 [github.com/liweiphys/layra](https://github.com/Mephisto1056/Lumbar)  
 📺 [哔哩哔哩：Biggestbiaoge](https://www.bilibili.com/video/BV1sd7QzmEUg/?share_source=copy_web)  
 🔍 微信公众号：LAYRA 项目  
 💡 微信群：见顶部标题下方

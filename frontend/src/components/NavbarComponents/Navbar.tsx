@@ -26,7 +26,7 @@ const Navbar = () => {
         </svg>
 
         <Link href="/" className="font-semibold text-sm">
-          LAYRA
+          GPAI
         </Link>
       </div>
 

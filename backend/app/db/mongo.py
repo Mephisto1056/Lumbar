@@ -1535,6 +1535,134 @@ class MongoDB:
             logger.error(f"删除节点失败: {str(e)}")
             return {"status": "failed", "message": f"数据库错误: {str(e)}"}
 
+    # Google Drive 相关方法
+    async def save_google_drive_auth(self, auth_data: dict) -> dict:
+        """保存 Google Drive 授权信息"""
+        try:
+            # 使用 upsert 操作，如果存在则更新，不存在则插入
+            result = await self.db.google_drive_auth.update_one(
+                {"user_id": auth_data["user_id"]},
+                {
+                    "$set": {
+                        "access_token": auth_data["access_token"],
+                        "refresh_token": auth_data["refresh_token"],
+                        "expires_at": auth_data["expires_at"],
+                        "scope": auth_data["scope"],
+                        "updated_at": beijing_time_now(),
+                    },
+                    "$setOnInsert": {
+                        "created_at": beijing_time_now(),
+                    }
+                },
+                upsert=True
+            )
+            return {"status": "success", "upserted_id": str(result.upserted_id) if result.upserted_id else None}
+        except Exception as e:
+            logger.error(f"保存 Google Drive 授权信息失败: {str(e)}")
+            return {"status": "failed", "message": f"数据库错误: {str(e)}"}
+
+    async def get_google_drive_auth(self, user_id: str) -> dict:
+        """获取 Google Drive 授权信息"""
+        try:
+            auth_data = await self.db.google_drive_auth.find_one({"user_id": user_id})
+            return auth_data
+        except Exception as e:
+            logger.error(f"获取 Google Drive 授权信息失败: {str(e)}")
+            return None
+
+    async def update_google_drive_auth(self, user_id: str, update_data: dict) -> dict:
+        """更新 Google Drive 授权信息"""
+        try:
+            result = await self.db.google_drive_auth.update_one(
+                {"user_id": user_id},
+                {
+                    "$set": {
+                        **update_data,
+                        "updated_at": beijing_time_now(),
+                    }
+                }
+            )
+            if result.modified_count > 0:
+                return {"status": "success"}
+            else:
+                return {"status": "failed", "message": "授权信息不存在"}
+        except Exception as e:
+            logger.error(f"更新 Google Drive 授权信息失败: {str(e)}")
+            return {"status": "failed", "message": f"数据库错误: {str(e)}"}
+
+    async def delete_google_drive_auth(self, user_id: str) -> dict:
+        """删除 Google Drive 授权信息"""
+        try:
+            result = await self.db.google_drive_auth.delete_one({"user_id": user_id})
+            if result.deleted_count > 0:
+                return {"status": "success", "message": "授权信息已删除"}
+            else:
+                return {"status": "failed", "message": "授权信息不存在"}
+        except Exception as e:
+            logger.error(f"删除 Google Drive 授权信息失败: {str(e)}")
+            return {"status": "failed", "message": f"数据库错误: {str(e)}"}
+
+    async def save_google_drive_import_record(self, import_data: dict) -> dict:
+        """保存 Google Drive 导入记录"""
+        try:
+            import_record = {
+                "import_id": import_data["import_id"],
+                "user_id": import_data["user_id"],
+                "knowledge_base_id": import_data["knowledge_base_id"],
+                "google_file_id": import_data["google_file_id"],
+                "google_file_name": import_data["google_file_name"],
+                "status": import_data.get("status", "pending"),
+                "error_message": import_data.get("error_message"),
+                "created_at": beijing_time_now(),
+                "completed_at": import_data.get("completed_at"),
+            }
+            await self.db.google_drive_imports.insert_one(import_record)
+            return {"status": "success", "import_id": import_data["import_id"]}
+        except Exception as e:
+            logger.error(f"保存 Google Drive 导入记录失败: {str(e)}")
+            return {"status": "failed", "message": f"数据库错误: {str(e)}"}
+
+    async def update_google_drive_import_status(
+        self, import_id: str, status: str, error_message: str = None
+    ) -> dict:
+        """更新 Google Drive 导入记录状态"""
+        try:
+            update_data = {
+                "status": status,
+                "updated_at": beijing_time_now(),
+            }
+            if error_message:
+                update_data["error_message"] = error_message
+            if status in ["completed", "failed"]:
+                update_data["completed_at"] = beijing_time_now()
+
+            result = await self.db.google_drive_imports.update_one(
+                {"import_id": import_id},
+                {"$set": update_data}
+            )
+            if result.modified_count > 0:
+                return {"status": "success"}
+            else:
+                return {"status": "failed", "message": "导入记录不存在"}
+        except Exception as e:
+            logger.error(f"更新 Google Drive 导入状态失败: {str(e)}")
+            return {"status": "failed", "message": f"数据库错误: {str(e)}"}
+
+    async def get_google_drive_import_records(
+        self, user_id: str, knowledge_base_id: str = None
+    ) -> List[dict]:
+        """获取 Google Drive 导入记录"""
+        try:
+            query = {"user_id": user_id}
+            if knowledge_base_id:
+                query["knowledge_base_id"] = knowledge_base_id
+
+            records = await self.db.google_drive_imports.find(query).sort("created_at", -1).to_list(length=None)
+            return records
+        except Exception as e:
+            logger.error(f"获取 Google Drive 导入记录失败: {str(e)}")
+            return []
+
 
 mongodb = MongoDB()
 

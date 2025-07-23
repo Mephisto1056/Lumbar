@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "LAYRA: Build Without Boundaries",
-  description: "LAYRA: Towards Visual-Driven Intelligent RAG Agent",
+  title: "GP_AI: Build Without Boundaries",
+  description: "GP_AI: Towards Visual-Driven Intelligent RAG Agent",
 };
 
 export default function RootLayout({

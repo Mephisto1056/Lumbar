@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     unoserver_instances: int = 3  # 建议等于CPU核心数
     unoserver_host: str = "unoserver"
     unoserver_base_port: int = 2003
+    # Google Drive API 配置
+    google_client_id: str = "your_google_client_id"
+    google_client_secret: str = "your_google_client_secret"
+    google_redirect_uri: str = "http://localhost:3000/auth/google/callback"
 
     class Config:
         env_file = "../.env"

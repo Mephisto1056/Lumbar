@@ -2,13 +2,13 @@
   <img src="./assets/logo.png" width="300" height="300" alt="LAYRA Logo" />
   <h1>🌌 LAYRA: Next Generation AI Agent Engine That Sees, Understands & Acts</h1>
   <p>
-    <a href="https://github.com/liweiphys/layra/stargazers">
+    <a href="https://github.com/Mephisto1056/Lumbar/stargazers">
       <img src="https://img.shields.io/github/stars/liweiphys/layra?style=social" alt="GitHub Stars" />
     </a>
-    <a href="https://github.com/liweiphys/layra/blob/main/LICENSE">
+    <a href="https://github.com/Mephisto1056/Lumbar/blob/main/LICENSE">
       <img src="https://img.shields.io/github/license/liweiphys/layra" alt="License: Apache 2.0" />
     </a>
-    <a href="https://github.com/liweiphys/layra/issues">
+    <a href="https://github.com/Mephisto1056/Lumbar/issues">
       <img src="https://img.shields.io/github/issues-closed/liweiphys/layra" alt="Closed Issues" />
     </a>
     <a href="https://liweiphys.github.io/layra">
@@ -86,7 +86,7 @@ Before starting, ensure your system meets these requirements:
 
 ```bash
 # Clone the repository
-git clone https://github.com/liweiphys/layra.git
+git clone https://github.com/Mephisto1056/Lumbar.git
 cd layra
 
 # Edit configuration file (modify server IP/parameters as needed)
@@ -352,7 +352,7 @@ Before starting, ensure your system meets these requirements:
 
 ```bash
 # Clone the repository
-git clone https://github.com/liweiphys/layra.git
+git clone https://github.com/Mephisto1056/Lumbar.git
 cd layra
 
 # Edit configuration file (modify server IP/parameters as needed)
@@ -484,7 +484,7 @@ We are in the process of creating a CONTRIBUTING.md file, which will provide gui
 
 **liweiphys**  
 📧 liweixmu@foxmail.com  
-🐙 [github.com/liweiphys/layra](https://github.com/liweiphys/layra)  
+🐙 [github.com/liweiphys/layra](https://github.com/Mephisto1056/Lumbar)  
 📺 [bilibili: Biggestbiaoge](https://www.bilibili.com/video/BV1sd7QzmEUg/?share_source=copy_web)  
 🔍 Wechat Official Account：LAYRA 项目  
 💡 Wechat group: see below the title at the top  

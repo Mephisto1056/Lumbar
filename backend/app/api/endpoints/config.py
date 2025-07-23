@@ -1,5 +1,7 @@
 import uuid
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from app.models.model_config import (
     ModelCreate,
     ModelUpdate,
@@ -14,6 +16,44 @@ from app.core.security import (
 from app.db.mongo import get_mongo, MongoDB
 
 router = APIRouter()
+
+
+class ValidateApiKeyRequest(BaseModel):
+    model_url: str
+    api_key: str
+
+
+@router.post("/validate-api-key")
+async def validate_api_key(
+    request: ValidateApiKeyRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """验证API Key是否可用"""
+    try:
+        # 使用OpenAI兼容API测试API Key有效性
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{request.model_url}/models",
+                headers={"Authorization": f"Bearer {request.api_key}"}
+            )
+            
+        if response.status_code == 200:
+            models = response.json()
+            if "data" in models and len(models["data"]) > 0:
+                return {"valid": True, "message": "API Key有效"}
+            else:
+                return {"valid": False, "message": "API Key无效或无可用模型"}
+        elif response.status_code == 401:
+            return {"valid": False, "message": "API Key无效或已过期"}
+        else:
+            return {"valid": False, "message": f"验证失败，状态码: {response.status_code}"}
+            
+    except httpx.TimeoutException:
+        return {"valid": False, "message": "连接超时，请检查URL是否正确"}
+    except httpx.ConnectError:
+        return {"valid": False, "message": "连接失败，请检查网络或URL"}
+    except Exception as e:
+        return {"valid": False, "message": f"验证过程中发生错误: {str(e)}"}
 
 
 @router.post("/{username}", status_code=201)

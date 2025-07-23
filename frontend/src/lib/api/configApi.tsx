@@ -75,3 +75,10 @@ export const addModelConfig = async (
 export const deleteModelConfig = async (username: string, modelId: string) => {
   return api.delete(`/config/${username}/${modelId}`);
 };
+
+export const validateApiKey = async (modelUrl: string, apiKey: string) => {
+  return api.post('/config/validate-api-key', {
+    model_url: modelUrl,
+    api_key: apiKey,
+  });
+};

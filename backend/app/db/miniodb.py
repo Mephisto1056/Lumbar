@@ -129,6 +129,16 @@ class AsyncMinIOManager:
                     ExpiresIn=expires,
                 )
                 logger.info(f"Generated presigned URL: {url}")
+                # 修复URL路径，将绝对路径转换为通过nginx代理的相对路径
+                # 原URL格式: http://192.168.1.5/minio-file/filename?params
+                # 目标格式: /minio-file/filename?params
+                if url.startswith(settings.server_ip):
+                # 提取路径和查询参数部分
+                    url_parts = url.split(settings.server_ip, 1)
+                    if len(url_parts) > 1:
+                        relative_url = url_parts[1]
+                        logger.info(f"Converted to relative URL: {relative_url}")
+                        return relative_url
                 return url
             except Exception as e:
                 logger.exception(f"Error generating presigned URL: {e}")

@@ -6,7 +6,7 @@ sidebar_position: 1
 
 Let's discover **LAYRA in under 60 minutes** - the visual-native AI agent engine that sees, understands, and acts.
 
-> Want to save time and effort? Join our WeChat group by scanning the [QR code](https://github.com/liweiphys/layra/blob/main/assets/Wechat-group1.jpg) and get direct help from our developers!
+> Want to save time and effort? Join our WeChat group by scanning the [QR code](https://github.com/Mephisto1056/Lumbar/blob/main/assets/Wechat-group1.jpg) and get direct help from our developers!
 >
 > (If the QR code has expired, feel free to reach out to the author at liweixmu@foxmail.com.)
 
@@ -31,7 +31,7 @@ Deploy LAYRA with Docker to unlock its full visual-first RAG and Workflow capabi
 ##### 1. Clone Repository & Configure
 
 ```bash
-git clone https://github.com/liweiphys/layra.git
+git clone https://github.com/Mephisto1056/Lumbar.git
 cd layra
 vim .env  # Edit key parameters (SERVER_IP, MODEL_BASE_URL)
 ```

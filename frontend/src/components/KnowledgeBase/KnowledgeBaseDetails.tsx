@@ -15,6 +15,7 @@ import {
 } from "react";
 import ShowFiles from "./ShowFiles";
 import { SupportUploadFormat } from "@/utils/file";
+import GoogleDriveImportModal from "../GoogleDrive/GoogleDriveImportModal";
 
 interface KnowledgeBaseDetailsProps {
   bases: Base[];
@@ -42,6 +43,7 @@ const KnowledgeBaseDetails: React.FC<KnowledgeBaseDetailsProps> = ({
   const [searchKeyword, setSearchKeyword] = useState("");
   const [files, setFiles] = useState<KnowledgeFile[]>([]);
   const [totalFiles, setTotalFiles] = useState(0);
+  const [showGoogleDriveModal, setShowGoogleDriveModal] = useState(false);
   const { user } = useAuthStore();
   // 在组件顶部声明 ref（如果是函数组件）
   // 为每个搜索框创建独立 ref
@@ -130,6 +132,14 @@ const KnowledgeBaseDetails: React.FC<KnowledgeBaseDetailsProps> = ({
     },
     [onFileUpload] // Add onFileUpload to dependencies
   );
+
+  // 处理 Google Drive 导入成功
+  const handleGoogleDriveImportSuccess = () => {
+    // 重新加载文件列表
+    loadFiles();
+    // 关闭模态框
+    setShowGoogleDriveModal(false);
+  };
 
   return (
     <div className="flex-1 h-full">
@@ -262,6 +272,22 @@ const KnowledgeBaseDetails: React.FC<KnowledgeBaseDetailsProps> = ({
                 <span>{buttonText}</span>
               </div>
             </label>
+            
+            {/* Google Drive 导入按钮 */}
+            <div className="mt-4 flex items-center gap-4">
+              <span className="text-gray-500">or</span>
+              <button
+                onClick={() => setShowGoogleDriveModal(true)}
+                disabled={isSendDisabled}
+                className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-300 rounded-full hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6.28 3l5.24 9.07L15.76 3h2.88l-7.12 12.35L4.4 3h1.88zm7.44 18L9.48 12.93 15.76 21H12.88l-4.24-7.35L4.4 21H1.52l7.12-12.35L13.72 21z"/>
+                </svg>
+                <span>Import from Google Drive</span>
+              </button>
+            </div>
+            
             <p className="mt-4 text-gray-600">
               Drag files here or click to select
             </p>
@@ -350,6 +376,17 @@ const KnowledgeBaseDetails: React.FC<KnowledgeBaseDetailsProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Google Drive 导入模态框 */}
+      {selectedBase && (
+        <GoogleDriveImportModal
+          isOpen={showGoogleDriveModal}
+          onClose={() => setShowGoogleDriveModal(false)}
+          knowledgeBaseId={selectedBase}
+          knowledgeBaseName={bases.find((r) => r.baseId === selectedBase)?.name || ''}
+          onImportSuccess={handleGoogleDriveImportSuccess}
+        />
       )}
     </div>
   );
