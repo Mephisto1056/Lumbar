@@ -95,7 +95,7 @@ const SignInPage = () => {
           className={`text-center text-3xl font-extrabold text-transparent bg-clip-text
             bg-gradient-to-r from-indigo-500 to-indigo-700`}
         >
-          LAYRA
+          LUMBAR
         </h1>
 
         <h2 className="text-2xl font-bold text-center text-gray-700">

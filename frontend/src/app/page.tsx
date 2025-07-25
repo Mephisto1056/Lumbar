@@ -89,7 +89,7 @@ const Homepage = () => {
           <div className="flex items-center justify-center gap-[5%] w-[50%]  transform transition-transform duration-300  hover:scale-110">
             <div
               onClick={() => {
-                window.location.href = "/work-flow";
+                window.location.href = "/ai-chat";
                 {
                   /*router.push("/chem-ketcher");*/
                 }

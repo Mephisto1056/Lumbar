@@ -34,13 +34,19 @@ ENV LANG zh_CN.utf8
 RUN python3.10 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# 升级pip到最新版本
+RUN pip install --upgrade pip setuptools wheel
+
 WORKDIR /app
 
 # 先复制 requirements.txt 以利用 Docker 缓存
 COPY requirements.txt .
 
-# 安装其他依赖
-RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.ustc.edu.cn/pypi/simple
+# 安装 PyTorch 相关依赖（使用官方源确保兼容性）
+RUN pip install --no-cache-dir torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
+
+# 安装其他依赖（使用阿里云源加速）
+RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 
 # 验证安装
 RUN python -c "import torch; print(f'PyTorch version: {torch.__version__}, CUDA: {torch.version.cuda}')" && \

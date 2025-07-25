@@ -299,7 +299,7 @@ const GoogleDriveImportModal: React.FC<GoogleDriveImportModalProps> = ({
             <GoogleDriveFileBrowser
               onFilesSelect={setSelectedFiles}
               selectedFiles={selectedFiles}
-              isImporting={importStatus.status === 'importing'}
+              isImporting={false}
             />
           )}
         </div>

@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "GP_AI: Build Without Boundaries",
-  description: "GP_AI: Towards Visual-Driven Intelligent RAG Agent",
+  title: "LUMBAR: Build Without Boundaries",
+  description: "LUMBAR: Towards Visual-Driven Intelligent RAG Agent",
 };
 
 export default function RootLayout({

@@ -2,4 +2,12 @@ fastapi[all]==0.115.11
 pydantic_settings==2.8.1
 gunicorn==23.0.0
 uvicorn[standard]==0.34.0
+python-dotenv==1.0.1
 colpali_engine==0.3.10
+torch==2.6.0
+torchvision==0.21.0
+transformers>=4.51.1,<4.52.0
+accelerate==1.4.0
+bitsandbytes==0.45.3
+pillow==11.1.0
+numpy==1.26.4
