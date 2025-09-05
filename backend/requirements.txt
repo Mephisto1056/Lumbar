@@ -26,3 +26,16 @@ mcp==1.9.1
 google-auth==2.23.4
 google-auth-oauthlib==1.1.0
 google-api-python-client==2.108.0
+
+# 音视频处理依赖 Audio/Video Processing Dependencies
+pydub==0.25.1
+librosa==0.10.2
+soundfile==0.12.1
+opencv-python==4.10.0.84
+moviepy==1.0.3
+mutagen==1.47.0
+imageio==2.35.1
+imageio-ffmpeg==0.5.1
+ffmpeg-python==0.2.0
+numpy==1.26.4
+scipy==1.14.1

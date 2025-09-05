@@ -283,30 +283,67 @@ services:
   model-server:
     build:
       context: ./model-server
+      dockerfile: Dockerfile.omni  # 使用新的Dockerfile
     depends_on:
       model-weights-init:
         condition: service_completed_successfully
     volumes:
       - model_weights:/model_weights
+      - /tmp:/tmp  # 临时文件处理
+      - /dev/shm:/dev/shm  # 映射共享内存
     environment:
       - COLBERT_MODEL_PATH=${COLBERT_MODEL_PATH}
+      - COLQWEN_OMNI_MODEL_PATH=${COLQWEN_OMNI_MODEL_PATH:-/model_weights/colqwen-omni-v0.1}
+      - COLQWEN_OMNI_BASE_PATH=${COLQWEN_OMNI_BASE_PATH:-/model_weights/colqwen2.5omni-base}
+      - MODEL_TYPE=${MODEL_TYPE:-omni}
+      - AUDIO_SEGMENT_DURATION=${AUDIO_SEGMENT_DURATION:-30}
+      - MAX_AUDIO_DURATION=${MAX_AUDIO_DURATION:-3600}
+      - AUDIO_SAMPLE_RATE=${AUDIO_SAMPLE_RATE:-16000}
+      - VIDEO_FRAME_INTERVAL=${VIDEO_FRAME_INTERVAL:-1}
+      - MAX_VIDEO_DURATION=${MAX_VIDEO_DURATION:-7200}
+      - MAX_VIDEO_SIZE=${MAX_VIDEO_SIZE:-1073741824}  # 增加到1GB
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-1073741824}    # 添加通用文件大小限制
+      - SUPPORTED_AUDIO_FORMATS=${SUPPORTED_AUDIO_FORMATS:-mp3,wav,flac,aac,ogg,m4a}
+      - SUPPORTED_VIDEO_FORMATS=${SUPPORTED_VIDEO_FORMATS:-mp4,avi,mov,mkv,wmv,flv,webm}
+      - SUPPORTED_IMAGE_FORMATS=${SUPPORTED_IMAGE_FORMATS:-jpg,jpeg,png,bmp,gif,tiff,webp}
       - NVIDIA_VISIBLE_DEVICES=all  # 暴露所有 GPU
+      - PYTHONUNBUFFERED=1
+      - TORCH_HOME=/model_weights/.torch  # 缓存目录
+      - OMP_NUM_THREADS=4  # 限制OpenMP线程数
+      - MKL_NUM_THREADS=4  # 限制MKL线程数
     networks:
       - layra-net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8005/healthy-check"]
-      interval: 30s
-      start_period: 30s
-      timeout: 5s
-      retries: 10
-      # 添加 GPU 支持配置
+      interval: 60s
+      start_period: 180s  # 进一步增加启动时间，音视频模型加载需要更多时间
+      timeout: 20s
+      retries: 8
+    # 添加 GPU 支持配置和更多资源
     deploy:
       resources:
+        limits:
+          memory: 24G  # 增加内存限制到24G，音视频+模型需要更多内存
+          cpus: '8'    # 限制CPU使用
         reservations:
+          memory: 12G  # 预留12G内存
+          cpus: '4'    # 预留4个CPU核心
           devices:
             - driver: nvidia
               count: 1  # 使用 1 块 GPU
               capabilities: [gpu]
+    # 增加共享内存，用于音视频处理和大模型推理
+    shm_size: 4g
+    # 添加重启策略
+    restart: unless-stopped
+    # 增加ulimits来处理大文件
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      stack:
+        soft: 67108864
+        hard: 67108864
 
   frontend:
     build:

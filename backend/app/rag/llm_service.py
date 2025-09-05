@@ -138,41 +138,86 @@ class ChatService:
             else:
                 cut_score = sorted_score
 
-            # 获取minio name并转成base64
+            # 获取文件信息并处理不同媒体类型
             for score in cut_score:
-                """
-                根据 file_id 和 image_id 获取：
-                - knowledge_db_id
-                - filename
-                - 文件的 minio_filename 和 minio_url
-                - 图片的 minio_filename 和 minio_url
-                """
-                file_and_image_info = await db.get_file_and_image_info(
-                    score["file_id"], score["image_id"]
+                # 获取文件和媒体信息
+                file_and_media_info = await db.get_file_and_media_info(
+                    score["file_id"], score.get("image_id"), score.get("segment_id")
                 )
-                if not file_and_image_info["status"] == "success":
+                
+                if not file_and_media_info["status"] == "success":
                     milvus_client.delete_files(
                         score["collection_name"], [score["file_id"]]
                     )
                     logger.warning(
-                        f"file_id: {score['file_id']} not found or corresponding image does not exist; deleting Milvus vectors"
+                        f"file_id: {score['file_id']} not found or corresponding media does not exist; deleting Milvus vectors"
                     )
-                else: 
-                    file_used.append(
-                        {
-                            "score": score["score"],
-                            "knowledge_db_id": file_and_image_info["knowledge_db_id"],
-                            "file_name": file_and_image_info["file_name"],
-                            "image_url": file_and_image_info["image_minio_url"],
-                            "file_url": file_and_image_info["file_minio_url"],
-                        }
-                    )
-                    content.append(
-                        {
-                            "type": "image_url",
-                            "image_url": file_and_image_info["image_minio_filename"],
-                        }
-                    )
+                else:
+                    media_type = score.get("media_type", "image")
+                    
+                    # 构建文件使用信息（确保所有数值都是Python原生类型）
+                    file_use_info = {
+                        "score": float(score["score"]),  # 转换为Python float
+                        "knowledge_db_id": file_and_media_info["knowledge_db_id"],
+                        "file_name": file_and_media_info["file_name"],
+                        "file_url": file_and_media_info["file_minio_url"],
+                        "media_type": media_type,
+                    }
+                    
+                    # 根据媒体类型处理不同的内容
+                    if media_type == "video_frame":
+                        # 视频帧处理 - 确保时间戳信息完整且为Python原生类型
+                        timestamp_start = float(score.get("timestamp_start", 0))
+                        timestamp_end = float(score.get("timestamp_end", timestamp_start + 10))  # 默认10秒片段
+                        duration = float(timestamp_end - timestamp_start)
+                        file_use_info.update({
+                            "image_url": file_and_media_info.get("image_minio_url"),
+                            "timestamp": timestamp_start,
+                            "timestamp_start": timestamp_start,
+                            "timestamp_end": timestamp_end,
+                            "duration": duration,
+                            "frame_info": f"Frame at {timestamp_start:.1f}s"
+                        })
+                        # 添加视频帧图像到对话内容
+                        if file_and_media_info.get("image_minio_filename"):
+                            content.append({
+                                "type": "image_url",
+                                "image_url": file_and_media_info["image_minio_filename"],
+                            })
+                    elif media_type in ["audio", "video_audio"]:
+                        # 音频分段处理 - 确保为Python原生类型
+                        timestamp_start = float(score.get("timestamp_start", 0))
+                        timestamp_end = float(score.get("timestamp_end", timestamp_start + 30))  # 默认30秒分段
+                        duration = float(score.get("duration", timestamp_end - timestamp_start))
+                        file_use_info.update({
+                            "timestamp_start": timestamp_start,
+                            "timestamp_end": timestamp_end,
+                            "duration": duration,
+                            "segment_info": f"Audio segment {timestamp_start:.1f}s - {timestamp_end:.1f}s"
+                        })
+                        # 音频不直接添加到视觉内容中，但记录引用信息
+                    elif media_type == "video":
+                        # 视频文件整体处理 - 确保为Python原生类型
+                        timestamp_start = float(score.get("timestamp_start", 0))
+                        timestamp_end = float(score.get("timestamp_end", timestamp_start + 30))
+                        duration = float(score.get("duration", timestamp_end - timestamp_start))
+                        file_use_info.update({
+                            "timestamp_start": timestamp_start,
+                            "timestamp_end": timestamp_end,
+                            "duration": duration,
+                            "image_url": file_and_media_info.get("image_minio_url"),
+                            "segment_info": f"Video segment {timestamp_start:.1f}s - {timestamp_end:.1f}s"
+                        })
+                    else:
+                        # 图像或文档处理（原有逻辑）
+                        file_use_info["image_url"] = file_and_media_info.get("image_minio_url")
+                        if file_and_media_info.get("image_minio_filename"):
+                            content.append({
+                                "type": "image_url",
+                                "image_url": file_and_media_info["image_minio_filename"],
+                            })
+                    
+                    file_used.append(file_use_info)
 
         # 用户输入
         content.append(

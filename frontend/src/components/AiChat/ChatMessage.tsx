@@ -7,7 +7,17 @@ import { useAuthStore } from "@/stores/authStore";
 import LoadingCircle from "./LoadingCircle";
 import { getFileIcon } from "@/utils/file";
 import MarkdownDisplay from "./MarkdownDisplay";
+import dynamic from 'next/dynamic';
 import { createPortal } from "react-dom";
+
+// 使用动态导入确保组件被包含在构建中
+const VideoSegmentPreview = dynamic(
+  () => import('@/components/VideoSegmentPreview/VideoSegmentPreview'),
+  {
+    ssr: false,
+    loading: () => <div className="p-4 text-gray-500">加载中...</div>
+  }
+);
 
 interface ChatMessageProps {
   modelConfig: ModelConfig | undefined;
@@ -112,7 +122,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           </div>
         )}
         {message.type === "baseFile" &&
-          message.content === "image_0" &&
+          (message.content === "image_0" || message.content === "video_frame" || message.content === "audio_segment") &&
           message.messageId && (
             <div
               className={`pl-2 flex gap-1 items-center text-sm text-indigo-500 hover:text-indigo-700 cursor-pointer ${
@@ -199,16 +209,124 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                   Score: {message.score}
                 </div>
               </div>
-              <div>
-                <Image
-                  src={message.imageMinioUrl || ""}
-                  alt={`image`}
-                  width={100}
-                  height={100}
-                  onClick={() => handleImageClick(message.imageMinioUrl || "")}
-                  className="cursor-pointer"
-                />
-              </div>
+              
+              {/* 根据媒体类型显示不同内容 */}
+              {(() => {
+                // 调试信息
+                console.log('BaseFile message:', {
+                  content: message.content,
+                  media_type: message.media_type,
+                  timestamp: message.timestamp,
+                  timestamp_start: message.timestamp_start,
+                  timestamp_end: message.timestamp_end,
+                  fileName: message.fileName,
+                  minioUrl: message.minioUrl,
+                  imageMinioUrl: message.imageMinioUrl
+                });
+                return null;
+              })()}
+              
+              {/* 检查是否为视频文件（通过文件扩展名判断） */}
+              {(() => {
+                const isVideoFile = message.fileName &&
+                  (message.fileName.toLowerCase().endsWith('.mp4') ||
+                   message.fileName.toLowerCase().endsWith('.avi') ||
+                   message.fileName.toLowerCase().endsWith('.mov') ||
+                   message.fileName.toLowerCase().endsWith('.mkv') ||
+                   message.fileName.toLowerCase().endsWith('.webm'));
+                
+                const isAudioFile = message.fileName &&
+                  (message.fileName.toLowerCase().endsWith('.mp3') ||
+                   message.fileName.toLowerCase().endsWith('.wav') ||
+                   message.fileName.toLowerCase().endsWith('.m4a') ||
+                   message.fileName.toLowerCase().endsWith('.ogg'));
+                
+                if (message.content === "video_frame" || (isVideoFile && message.media_type === 'video_frame')) {
+                  return (
+                    <>
+                      {/* 视频帧预览 */}
+                      <VideoSegmentPreview
+                        videoUrl={message.minioUrl || ""}
+                        thumbnailUrl={message.imageMinioUrl || ""}
+                        filename={message.fileName || "Video"}
+                        startTime={message.timestamp_start !== undefined ? message.timestamp_start : (message.timestamp || 0)}
+                        endTime={message.timestamp_end !== undefined ? message.timestamp_end : ((message.timestamp || 0) + 10)}
+                        score={message.score}
+                        onSegmentClick={(start, end) => {
+                          console.log(`Jumping to video segment: ${start}s - ${end}s`);
+                        }}
+                      />
+                    </>
+                  );
+                } else if (message.content === "audio_segment" || (isAudioFile && (message.media_type === 'audio' || message.media_type === 'video_audio'))) {
+                  return (
+                    <>
+                      {/* 音频分段预览 */}
+                      <VideoSegmentPreview
+                        videoUrl={message.minioUrl || ""}
+                        thumbnailUrl={message.imageMinioUrl}
+                        filename={message.fileName || "Audio"}
+                        startTime={message.timestamp_start !== undefined ? message.timestamp_start : 0}
+                        endTime={message.timestamp_end !== undefined ? message.timestamp_end : (message.timestamp_start || 0) + 30}
+                        score={message.score}
+                        onSegmentClick={(start, end) => {
+                          console.log(`Jumping to audio segment: ${start}s - ${end}s`);
+                        }}
+                      />
+                    </>
+                  );
+                } else if (isVideoFile && (message.media_type === 'video' || !message.media_type)) {
+                  return (
+                    <>
+                      {/* 视频文件预览 */}
+                      <VideoSegmentPreview
+                        videoUrl={message.minioUrl || ""}
+                        thumbnailUrl={message.imageMinioUrl || ""}
+                        filename={message.fileName || "Video"}
+                        startTime={message.timestamp_start !== undefined ? message.timestamp_start : 0}
+                        endTime={message.timestamp_end !== undefined ? message.timestamp_end : (message.timestamp_start || 0) + 30}
+                        score={message.score}
+                        onSegmentClick={(start, end) => {
+                          console.log(`Jumping to video segment: ${start}s - ${end}s`);
+                        }}
+                      />
+                    </>
+                  );
+                } else {
+                  // 原有图片显示
+                  return (
+                    <div>
+                      <Image
+                        src={message.imageMinioUrl || ""}
+                        alt={`image`}
+                        width={100}
+                        height={100}
+                        onClick={() => handleImageClick(message.imageMinioUrl || "")}
+                        className="cursor-pointer"
+                      />
+                    </div>
+                  );
+                }
+              })()}
+              
+              {/* 原来的条件渲染代码已经移到上面的函数中 */}
+              {false && message.content === "video_frame" ? (
+                <>
+                  {/* 视频帧使用新的视频片段预览组件 */}
+                  <VideoSegmentPreview
+                    videoUrl={message.minioUrl || ""}
+                    thumbnailUrl={message.imageMinioUrl || ""}
+                    filename={message.fileName || "Video"}
+                    startTime={message.timestamp || 0}
+                    endTime={(message.timestamp || 0) + 3} // 视频帧显示3秒片段
+                    score={message.score}
+                    onSegmentClick={(start, end) => {
+                      console.log(`Jumping to video segment: ${start}s - ${end}s`);
+                    }}
+                  />
+                </>
+              ) : null}
+              
               <div
                 onClick={() => {
                   return handleDownload(

@@ -42,6 +42,13 @@ class MongoDB:
             await self.db.files.create_index(
                 [("knowledge_db_id", 1)], name="kb_file_query"  # 普通索引
             )
+            # 新增媒体类型索引
+            await self.db.files.create_index(
+                [("media_type", 1)], name="media_type_index"
+            )
+            await self.db.files.create_index(
+                [("knowledge_db_id", 1), ("media_type", 1)], name="kb_media_query"
+            )
 
             # 对话集合索引
             await self.db.conversations.create_index(
@@ -942,8 +949,11 @@ class MongoDB:
         minio_filename: str,
         minio_url: str,
         knowledge_db_id: str,
+        media_type: str = "document",  # 新增：媒体类型
+        media_metadata: dict = None,    # 新增：媒体元数据
+        segments: list = None           # 新增：音视频分段信息
     ):
-        """创建文件记录（带唯一索引保护）"""
+        """创建文件记录（带唯一索引保护，支持音视频）"""
         file = {
             "file_id": file_id,
             "filename": filename,
@@ -951,11 +961,22 @@ class MongoDB:
             "minio_filename": minio_filename,
             "minio_url": minio_url,
             "knowledge_db_id": knowledge_db_id,
-            "images": [],
+            "media_type": media_type,  # image/audio/video/document
+            "images": [],  # 保持向后兼容
             "created_at": beijing_time_now(),
             "last_modify_at": beijing_time_now(),
             "is_delete": False,
         }
+        
+        # 添加媒体元数据（如果提供）
+        if media_metadata:
+            file["media_metadata"] = media_metadata
+            
+        # 添加分段信息（音视频文件）
+        if segments:
+            file["segments"] = segments
+        else:
+            file["segments"] = []
 
         try:
             await self.db.files.insert_one(file)
@@ -988,6 +1009,113 @@ class MongoDB:
                 "$set": {"last_modify_at": beijing_time_now()},
             },
         )
+
+    async def add_media_segments(
+        self,
+        file_id: str,
+        segments: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """向指定的 file_id 中添加音视频分段信息（不包含embedding向量）"""
+        # 移除embedding数据，只保存元数据，避免MongoDB 16MB文档大小限制
+        segments_metadata = []
+        for segment in segments:
+            # 复制segment但排除embedding字段
+            metadata = {k: v for k, v in segment.items() if k != 'embedding'}
+            segments_metadata.append(metadata)
+        
+        logger.info(f"Adding {len(segments_metadata)} media segments metadata to file {file_id} (embeddings stored in Milvus)")
+        
+        result = await self.db.files.update_one(
+            {"file_id": file_id, "is_delete": False},
+            {
+                "$push": {
+                    "segments": {"$each": segments_metadata}  # 只存储元数据
+                },
+                "$set": {"last_modify_at": beijing_time_now()},
+            },
+        )
+        
+        if result.matched_count > 0:
+            logger.info(f"Successfully added {len(segments_metadata)} segments metadata to MongoDB for file {file_id}")
+            return {"status": "success", "segments_added": len(segments_metadata)}
+        else:
+            logger.error(f"Failed to add segments metadata: file {file_id} not found or deleted")
+            return {"status": "failed", "message": "文件未找到或已删除"}
+
+    async def update_media_metadata(
+        self,
+        file_id: str,
+        media_metadata: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """更新文件的媒体元数据"""
+        result = await self.db.files.update_one(
+            {"file_id": file_id, "is_delete": False},
+            {
+                "$set": {
+                    "media_metadata": media_metadata,
+                    "last_modify_at": beijing_time_now()
+                }
+            },
+        )
+        
+        if result.matched_count > 0:
+            return {"status": "success"}
+        else:
+            return {"status": "failed", "message": "文件未找到或已删除"}
+
+    async def get_files_by_media_type(
+        self,
+        knowledge_base_id: str,
+        media_type: str,
+        skip: int = 0,
+        limit: int = 10
+    ) -> Dict[str, Any]:
+        """根据媒体类型获取文件列表"""
+        pipeline = [
+            {
+                "$match": {
+                    "knowledge_db_id": knowledge_base_id,
+                    "media_type": media_type,
+                    "is_delete": False
+                }
+            },
+            {
+                "$sort": {"last_modify_at": -1}
+            },
+            {
+                "$facet": {
+                    "files": [
+                        {"$skip": skip},
+                        {"$limit": limit}
+                    ],
+                    "total": [
+                        {"$count": "count"}
+                    ]
+                }
+            }
+        ]
+        
+        result = list(await self.db.files.aggregate(pipeline).to_list(length=1))
+        if result:
+            files = result[0].get("files", [])
+            total = result[0].get("total", [])
+            total_count = total[0]["count"] if total else 0
+            
+            return {
+                "status": "success",
+                "files": files,
+                "total": total_count,
+                "skip": skip,
+                "limit": limit
+            }
+        else:
+            return {
+                "status": "success",
+                "files": [],
+                "total": 0,
+                "skip": skip,
+                "limit": limit
+            }
         return {"status": "success" if result.modified_count > 0 else "failed"}
 
     async def get_file_and_image_info(
@@ -1044,6 +1172,79 @@ class MongoDB:
             "image_minio_filename": image_minio_filename,
             "image_minio_url": image_minio_url,  # 图片的 URL
         }
+
+    async def get_file_and_media_info(
+        self, file_id: str, image_id: str = None, segment_id: str = None
+    ) -> Dict[str, Any]:
+        """
+        根据 file_id 和可选的 image_id/segment_id 获取文件和媒体信息
+        支持图片、视频帧、音频分段等不同媒体类型
+        """
+        # 首先获取文件基本信息
+        file_doc = await self.db.files.find_one(
+            {"file_id": file_id, "is_delete": False},
+            projection={
+                "knowledge_db_id": 1,
+                "filename": 1,
+                "minio_filename": 1,
+                "minio_url": 1,
+                "media_type": 1,
+                "media_metadata": 1,
+                "images": 1,
+            },
+        )
+
+        if not file_doc:
+            return {"status": "failed", "message": "file_id not found"}
+
+        # 提取文件基本信息
+        result = {
+            "status": "success",
+            "knowledge_db_id": file_doc.get("knowledge_db_id"),
+            "file_name": file_doc.get("filename"),
+            "file_minio_filename": file_doc.get("minio_filename"),
+            "file_minio_url": file_doc.get("minio_url"),
+            "media_type": file_doc.get("media_type", "document"),
+        }
+
+        # 处理图片类型（原有逻辑）
+        if image_id and file_doc.get("images"):
+            for image in file_doc["images"]:
+                if image.get("images_id") == image_id:
+                    result.update({
+                        "image_minio_filename": image.get("minio_filename"),
+                        "image_minio_url": image.get("minio_url"),
+                    })
+                    break
+            else:
+                return {"status": "failed", "message": "image_id not found"}
+
+        # 处理媒体分段（视频帧、音频分段）
+        if segment_id:
+            segment_doc = await self.db.media_segments.find_one({
+                "file_id": file_id,
+                "segments.segment_id": segment_id
+            })
+            
+            if segment_doc:
+                # 找到匹配的分段
+                for segment in segment_doc.get("segments", []):
+                    if segment.get("segment_id") == segment_id:
+                        result.update({
+                            "segment_info": segment,
+                            "timestamp_start": segment.get("start_time", segment.get("timestamp", 0)),
+                            "timestamp_end": segment.get("end_time", segment.get("timestamp", 0)),
+                            "duration": segment.get("duration", 0),
+                        })
+                        
+                        # 如果是视频帧，可能有关联的图片信息
+                        if segment.get("frame_image_url"):
+                            result["image_minio_url"] = segment["frame_image_url"]
+                        if segment.get("frame_image_filename"):
+                            result["image_minio_filename"] = segment["frame_image_filename"]
+                        break
+
+        return result
 
     async def delete_files_base(self, file_id: str) -> dict:
         """根据 knowledge_base_id 删除指定会话"""

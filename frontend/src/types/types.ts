@@ -17,6 +17,12 @@ export interface Message {
     prompt_tokens: number;
   };
   from: "user" | "ai"; // 消息的来源
+  // 新增媒体相关字段
+  timestamp?: number; // 视频帧时间戳
+  timestamp_start?: number; // 音频/视频分段开始时间
+  timestamp_end?: number; // 音频/视频分段结束时间
+  duration?: number; // 分段时长
+  media_type?: 'image' | 'audio' | 'video' | 'video_frame' | 'video_audio' | 'document';
 }
 
 export interface Chat {
@@ -100,14 +106,42 @@ export interface KnowledgeFile {
   upload_time: string;
   kb_id: string;
   minio_filename: string;
+  media_type?: 'image' | 'audio' | 'video' | 'document';
+  media_metadata?: {
+    duration?: number;
+    sample_rate?: number;
+    channels?: number;
+    resolution?: string;
+    fps?: number;
+    file_size?: number;
+    format?: string;
+    has_audio?: boolean;
+  };
+  segments?: MediaSegment[];
+}
+
+export interface MediaSegment {
+  segment_id: string;
+  start_time: number;
+  end_time: number;
+  duration: number;
+  timestamp?: number;
+  frame_idx?: number;
 }
 
 export interface FileUsed {
   knowledge_db_id: string;
   file_name: string;
-  image_url: string;
+  image_url?: string;
   file_url: string;
   score: number;
+  media_type?: 'image' | 'audio' | 'video' | 'video_frame' | 'video_audio' | 'document';
+  timestamp?: number;
+  timestamp_start?: number;
+  timestamp_end?: number;
+  duration?: number;
+  frame_info?: string;
+  segment_info?: string;
 }
 
 // types.ts

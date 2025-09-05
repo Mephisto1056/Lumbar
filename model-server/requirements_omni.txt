@@ -1,0 +1,45 @@
+# FastAPI 和基础依赖
+fastapi[all]==0.115.11
+pydantic_settings==2.8.1
+gunicorn==23.0.0
+uvicorn[standard]==0.34.0
+python-dotenv==1.0.1
+
+# ColPali Engine 和机器学习框架 - 使用支持ColQwen2_5Omni的版本
+colpali_engine>=0.3.11
+torch==2.5.1
+torchvision==0.20.1
+torchaudio==2.5.1
+transformers>=4.53.1,<4.54.0
+accelerate>=1.2.0
+bitsandbytes==0.45.0
+peft>=0.15.0
+
+# 图像处理
+pillow==11.1.0
+opencv-python==4.10.0.84
+numpy==1.26.4
+
+# 音频处理
+librosa==0.10.2
+soundfile==0.12.1
+pydub==0.25.1
+
+# 视频处理  
+imageio==2.35.1
+imageio-ffmpeg==0.5.1
+ffmpeg-python==0.2.0
+
+# 文件格式支持
+mutagen==1.47.0  # 音频元数据
+moviepy==1.0.3   # 视频处理
+
+# 数据处理
+scipy==1.14.1
+scikit-learn==1.5.2
+
+# 性能优化
+numba==0.60.0
+
+# 调试和监控
+tqdm==4.67.1

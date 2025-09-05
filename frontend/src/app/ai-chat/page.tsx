@@ -203,17 +203,40 @@ const AIChat: React.FC = () => {
                   },
                 },
 
-                ...file_used.map((file: FileUsed, index: number) => ({
-                  type: "baseFile",
-                  content: `image_${index}`,
-                  imageMinioUrl: file.image_url,
-                  fileName: file.file_name,
-                  messageId: `${item.message_id}`,
-                  baseId: file.knowledge_db_id,
-                  minioUrl: file.file_url,
-                  score: file.score,
-                  from: "ai",
-                })),
+                ...file_used.map((file: FileUsed, index: number) => {
+                  // 根据媒体类型确定content和相关属性
+                  let content = `image_${index}`;
+                  let additionalProps = {};
+                  
+                  if (file.media_type === 'video_frame') {
+                    content = 'video_frame';
+                    additionalProps = {
+                      timestamp: file.timestamp,
+                      media_type: 'video_frame',
+                    };
+                  } else if (file.media_type === 'audio' || file.media_type === 'video_audio') {
+                    content = 'audio_segment';
+                    additionalProps = {
+                      timestamp_start: file.timestamp_start,
+                      timestamp_end: file.timestamp_end,
+                      duration: file.duration,
+                      media_type: file.media_type,
+                    };
+                  }
+
+                  return {
+                    type: "baseFile",
+                    content,
+                    imageMinioUrl: file.image_url,
+                    fileName: file.file_name,
+                    messageId: `${item.message_id}`,
+                    baseId: file.knowledge_db_id,
+                    minioUrl: file.file_url,
+                    score: file.score,
+                    from: "ai",
+                    ...additionalProps,
+                  };
+                }),
               ];
             })
             .flat(); // 使用 flat 将嵌套数组平铺
@@ -397,17 +420,43 @@ const AIChat: React.FC = () => {
       setMessages((prevMessages: string | any[]) => {
         return [
           ...prevMessages,
-          ...file_used.map((file, index) => ({
-            type: "baseFile",
-            content: `image_${index}`,
-            messageId: messageId ? messageId : "",
-            imageMinioUrl: file.image_url,
-            fileName: file.file_name,
-            baseId: file.knowledge_db_id,
-            minioUrl: file.file_url,
-            score: file.score,
-            from: "ai",
-          })),
+          ...file_used.map((file, index) => {
+            // 根据媒体类型确定content和相关属性
+            let content = `image_${index}`;
+            let additionalProps = {};
+            
+            if (file.media_type === 'video_frame') {
+              content = 'video_frame';
+              additionalProps = {
+                timestamp: file.timestamp,
+                timestamp_start: file.timestamp_start,
+                timestamp_end: file.timestamp_end,
+                duration: file.duration,
+                media_type: 'video_frame',
+              };
+            } else if (file.media_type === 'audio' || file.media_type === 'video_audio') {
+              content = 'audio_segment';
+              additionalProps = {
+                timestamp_start: file.timestamp_start,
+                timestamp_end: file.timestamp_end,
+                duration: file.duration,
+                media_type: file.media_type,
+              };
+            }
+
+            return {
+              type: "baseFile",
+              content,
+              messageId: messageId ? messageId : "",
+              imageMinioUrl: file.image_url,
+              fileName: file.file_name,
+              baseId: file.knowledge_db_id,
+              minioUrl: file.file_url,
+              score: file.score,
+              from: "ai",
+              ...additionalProps,
+            };
+          }),
         ];
       });
     } catch (error) {

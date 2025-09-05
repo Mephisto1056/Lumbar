@@ -26,6 +26,18 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::AllowInsecure
         ttf-wqy-microhei \
         fonts-noto-cjk \
         fonts-noto-cjk-extra \
+        ffmpeg \
+        libgl1-mesa-glx \
+        libglib2.0-0 \
+        libsm6 \
+        libxext6 \
+        libxrender1 \
+        libgomp1 \
+        libgstreamer1.0-0 \
+        libavcodec-dev \
+        libavformat-dev \
+        libavutil-dev \
+        libswscale-dev \
     && rm -rf /var/lib/apt/lists/* && \
     localedef -i zh_CN -c -f UTF-8 -A /usr/share/locale/locale.alias zh_CN.UTF-8
 

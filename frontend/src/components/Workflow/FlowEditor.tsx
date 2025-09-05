@@ -855,17 +855,43 @@ const FlowEditor: React.FC<FlowEditorProps> = ({
                         };
 
                         const referenceMessages = [
-                          ...state.file_used.map((file, index) => ({
-                            type: "baseFile" as const,
-                            content: `image_${index}`,
-                            messageId: state.messageId ? state.messageId : "",
-                            imageMinioUrl: file.image_url,
-                            fileName: file.file_name,
-                            baseId: file.knowledge_db_id,
-                            minioUrl: file.file_url,
-                            score: file.score,
-                            from: "ai" as const,
-                          })),
+                          ...state.file_used.map((file, index) => {
+                            // 根据媒体类型确定content和相关属性
+                            let content = `image_${index}`;
+                            let additionalProps = {};
+                            
+                            if (file.media_type === 'video_frame') {
+                              content = 'video_frame';
+                              additionalProps = {
+                                timestamp: file.timestamp,
+                                timestamp_start: file.timestamp_start,
+                                timestamp_end: file.timestamp_end,
+                                duration: file.duration,
+                                media_type: 'video_frame',
+                              };
+                            } else if (file.media_type === 'audio' || file.media_type === 'video_audio') {
+                              content = 'audio_segment';
+                              additionalProps = {
+                                timestamp_start: file.timestamp_start,
+                                timestamp_end: file.timestamp_end,
+                                duration: file.duration,
+                                media_type: file.media_type,
+                              };
+                            }
+
+                            return {
+                              type: "baseFile" as const,
+                              content,
+                              messageId: state.messageId ? state.messageId : "",
+                              imageMinioUrl: file.image_url,
+                              fileName: file.file_name,
+                              baseId: file.knowledge_db_id,
+                              minioUrl: file.file_url,
+                              score: file.score,
+                              from: "ai" as const,
+                              ...additionalProps,
+                            };
+                          }),
                         ];
                         return {
                           ...prev,
@@ -891,17 +917,43 @@ const FlowEditor: React.FC<FlowEditorProps> = ({
                             },
                           };
                           const referenceMessage = [
-                            ...state.file_used.map((file, index) => ({
-                              type: "baseFile" as const,
-                              content: `image_${index}`,
-                              messageId: state.messageId ? state.messageId : "",
-                              imageMinioUrl: file.image_url,
-                              fileName: file.file_name,
-                              baseId: file.knowledge_db_id,
-                              minioUrl: file.file_url,
-                              score: file.score,
-                              from: "ai" as const,
-                            })),
+                            ...state.file_used.map((file, index) => {
+                              // 根据媒体类型确定content和相关属性
+                              let content = `image_${index}`;
+                              let additionalProps = {};
+                              
+                              if (file.media_type === 'video_frame') {
+                                content = 'video_frame';
+                                additionalProps = {
+                                  timestamp: file.timestamp,
+                                  timestamp_start: file.timestamp_start,
+                                  timestamp_end: file.timestamp_end,
+                                  duration: file.duration,
+                                  media_type: 'video_frame',
+                                };
+                              } else if (file.media_type === 'audio' || file.media_type === 'video_audio') {
+                                content = 'audio_segment';
+                                additionalProps = {
+                                  timestamp_start: file.timestamp_start,
+                                  timestamp_end: file.timestamp_end,
+                                  duration: file.duration,
+                                  media_type: file.media_type,
+                                };
+                              }
+
+                              return {
+                                type: "baseFile" as const,
+                                content,
+                                messageId: state.messageId ? state.messageId : "",
+                                imageMinioUrl: file.image_url,
+                                fileName: file.file_name,
+                                baseId: file.knowledge_db_id,
+                                minioUrl: file.file_url,
+                                score: file.score,
+                                from: "ai" as const,
+                                ...additionalProps,
+                              };
+                            }),
                           ];
                           eachMessagesRef.current = {
                             ...prev,
