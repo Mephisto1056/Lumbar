@@ -803,15 +803,41 @@ const VlmNodeComponent: React.FC<VlmNodeProps> = ({
             style={{ overscrollBehavior: "contain" }}
           >
             {messages && messages.length > 0 ? (
-              messages.map((message, index) => (
-                <ChatMessage
-                  modelConfig={node.data.modelConfig}
-                  key={index}
-                  message={message}
-                  showRefFile={showRefFile}
-                  setShowRefFile={setShowRefFile}
-                />
-              ))
+              (() => {
+                // 预处理：找出每个messageId的第一个baseFile消息的索引
+                const messageIdFirstBaseFileMap = new Map<string, number>();
+                
+                // 遍历消息，记录每个messageId的第一个baseFile消息索引
+                messages.forEach((message, index) => {
+                  if (message.type === "baseFile") {
+                    const messageId = message.messageId || "default";
+                    if (!messageIdFirstBaseFileMap.has(messageId)) {
+                      messageIdFirstBaseFileMap.set(messageId, index);
+                    }
+                  }
+                });
+
+                return messages.map((message, index) => {
+                  // 只有每个messageId的第一个baseFile才显示按钮
+                  let shouldShowButton = false;
+                  if (message.type === "baseFile") {
+                    const messageId = message.messageId || "default";
+                    const firstIndex = messageIdFirstBaseFileMap.get(messageId);
+                    shouldShowButton = firstIndex === index;
+                  }
+                  
+                  return (
+                    <ChatMessage
+                      modelConfig={node.data.modelConfig}
+                      key={index}
+                      message={message}
+                      showRefFile={showRefFile}
+                      setShowRefFile={setShowRefFile}
+                      shouldShowViewReferencesButton={shouldShowButton}
+                    />
+                  );
+                });
+              })()
             ) : (
               <div className="px-2">
                 <MarkdownDisplay

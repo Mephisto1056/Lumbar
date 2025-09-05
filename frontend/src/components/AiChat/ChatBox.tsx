@@ -445,15 +445,47 @@ const ChatBox: React.FC<ChatBoxProps> = ({
               className="flex-1 overflow-y-auto scrollbar-hide"
               style={{ overscrollBehavior: "contain" }}
             >
-              {messages.map((message, index) => (
-                <ChatMessage
-                  modelConfig={modelConfig}
-                  key={index}
-                  message={message}
-                  showRefFile={showRefFile}
-                  setShowRefFile={setShowRefFile}
-                />
-              ))}
+              {(() => {
+                // 预处理：找出每个messageId的第一个baseFile消息的索引
+                const messageIdFirstBaseFileMap = new Map<string, number>();
+                
+                // 遍历消息，记录每个messageId的第一个baseFile消息索引
+                messages.forEach((message, index) => {
+                  if (message.type === "baseFile") {
+                    const messageId = message.messageId || "default";
+                    if (!messageIdFirstBaseFileMap.has(messageId)) {
+                      messageIdFirstBaseFileMap.set(messageId, index);
+                    }
+                  }
+                });
+
+                console.log(`[DEBUG] messageIdFirstBaseFileMap:`, messageIdFirstBaseFileMap);
+
+                return messages.map((message, index) => {
+                  // 只有每个messageId的第一个baseFile才显示按钮
+                  let shouldShowButton = false;
+                  if (message.type === "baseFile") {
+                    const messageId = message.messageId || "default";
+                    const firstIndex = messageIdFirstBaseFileMap.get(messageId);
+                    shouldShowButton = firstIndex === index;
+                  }
+                  
+                  if (message.type === "baseFile") {
+                    console.log(`[DEBUG] Message ${index}: messageId=${message.messageId}, type=${message.type}, shouldShowButton=${shouldShowButton}`);
+                  }
+
+                  return (
+                    <ChatMessage
+                      modelConfig={modelConfig}
+                      key={index}
+                      message={message}
+                      showRefFile={showRefFile}
+                      setShowRefFile={setShowRefFile}
+                      shouldShowViewReferencesButton={shouldShowButton}
+                    />
+                  );
+                });
+              })()}
               {/* 这个 div 用于滚动到底部 */}
               <div ref={messagesEndRef} />
             </div>

@@ -24,6 +24,7 @@ interface ChatMessageProps {
   message: Message;
   showRefFile: string[];
   setShowRefFile: Dispatch<React.SetStateAction<string[]>>;
+  shouldShowViewReferencesButton?: boolean;
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -31,6 +32,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   message,
   showRefFile,
   setShowRefFile,
+  shouldShowViewReferencesButton = false,
 }) => {
   const isUser = message.from === "user"; // 判断是否是用户消息
   const [isOpen, setIsOpen] = useState(false);
@@ -122,25 +124,21 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           </div>
         )}
         {message.type === "baseFile" &&
-          (message.content === "image_0" || message.content === "video_frame" || message.content === "audio_segment") &&
-          message.messageId && (
+          shouldShowViewReferencesButton && (
             <div
               className={`pl-2 flex gap-1 items-center text-sm text-indigo-500 hover:text-indigo-700 cursor-pointer ${
-                showRefFile.includes(message.messageId) ? "pb-2" : "pb-6"
+                showRefFile.includes(message.messageId || "baseFiles") ? "pb-2" : "pb-6"
               }`}
               onClick={() => {
                 setShowRefFile((prev) => {
-                  // 使用函数式更新确保获取最新状态 ()
-                  if (message.messageId) {
-                    if (prev.includes(message.messageId)) {
-                      // 如果存在：创建新数组（过滤掉目标元素）
-                      return prev.filter((item) => item !== message.messageId);
-                    } else {
-                      // 如果不存在：创建新数组（添加新元素）
-                      return [...prev, message.messageId];
-                    }
+                  // 使用messageId作为标识符控制特定消息组的展开状态
+                  const identifier = message.messageId || "baseFiles";
+                  if (prev.includes(identifier)) {
+                    // 如果存在：创建新数组（过滤掉目标元素）
+                    return prev.filter((item) => item !== identifier);
                   } else {
-                    return [...prev];
+                    // 如果不存在：创建新数组（添加新元素）
+                    return [...prev, identifier];
                   }
                 });
               }}
@@ -155,11 +153,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               </svg>
 
               <div>
-                {showRefFile.includes(message.messageId)
+                {showRefFile.includes(message.messageId || "baseFiles")
                   ? "Close References"
                   : "View References"}
               </div>
-              {showRefFile.includes(message.messageId) ? (
+              {showRefFile.includes(message.messageId || "baseFiles") ? (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -189,8 +187,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             </div>
           )}
         {message.type === "baseFile" &&
-          message.messageId &&
-          showRefFile.includes(message.messageId) && (
+          showRefFile.includes(message.messageId || "baseFiles") && (
             <div className="pl-2 flex flex-col gap-2 items-start justify-center mb-3">
               <div className="flex items-center justify-center gap-1">
                 <svg

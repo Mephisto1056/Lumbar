@@ -689,18 +689,43 @@ const WorkflowOutputComponent: React.FC<WorkflowOutputProps> = ({
             >
               {messagesWithCount && runningLLMNodes.length > 0 ? (
                 Object.entries(messagesWithCount).map(
-                  ([count, messages], messagesIndex) =>
-                    messages.map((message, index) => (
-                      <ChatMessage
-                        modelConfig={
-                          runningLLMNodes[Number(count) - 1].data.modelConfig
+                  ([count, messages], messagesIndex) => {
+                    // 预处理：找出每个messageId的第一个baseFile消息的索引
+                    const messageIdFirstBaseFileMap = new Map<string, number>();
+                    
+                    // 遍历消息，记录每个messageId的第一个baseFile消息索引
+                    messages.forEach((message, index) => {
+                      if (message.type === "baseFile") {
+                        const messageId = message.messageId || "default";
+                        if (!messageIdFirstBaseFileMap.has(messageId)) {
+                          messageIdFirstBaseFileMap.set(messageId, index);
                         }
-                        key={messagesIndex + index}
-                        message={message}
-                        showRefFile={showRefFile}
-                        setShowRefFile={setShowRefFile}
-                      />
-                    ))
+                      }
+                    });
+
+                    return messages.map((message, index) => {
+                      // 只有每个messageId的第一个baseFile才显示按钮
+                      let shouldShowButton = false;
+                      if (message.type === "baseFile") {
+                        const messageId = message.messageId || "default";
+                        const firstIndex = messageIdFirstBaseFileMap.get(messageId);
+                        shouldShowButton = firstIndex === index;
+                      }
+                      
+                      return (
+                        <ChatMessage
+                          modelConfig={
+                            runningLLMNodes[Number(count) - 1].data.modelConfig
+                          }
+                          key={messagesIndex + index}
+                          message={message}
+                          showRefFile={showRefFile}
+                          setShowRefFile={setShowRefFile}
+                          shouldShowViewReferencesButton={shouldShowButton}
+                        />
+                      );
+                    });
+                  }
                 )
               ) : (
                 <ChatMessage
